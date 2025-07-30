@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Metrics SaaS - System Architecture</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 { color: #333; }
+        .diagram-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .description {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .tech-stack {
+            display: inline-block;
+            background: #e3f2fd;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Payment Metrics SaaS - System Architecture</h1>
+    
+    <div class="diagram-container">
+        <h2>Data Flow Diagram</h2>
+        <div class="mermaid">
+            flowchart TD
+                %% Payment Providers
+                PP1["Stripe API"]
+                PP2["PayPal API"] 
+                PP3["Square API"]
+                PP4["Other Providers"]
+                
+                %% Ingestion Layer
+                IS["Ingestion Service<br/><br/>- Webhook handlers<br/>- Signature validation"]
+                
+                %% Message Queue
+                MQ["Message Queue<br/>"]
+                
+                %% Normalization Service
+                NS["Normalization Service<br/><br/>- Data transformation<br/>- Schema mapping"]
+                
+                %% Data Storage
+                DW["Data Warehouse<br/><br/>- Normalized payments<br/>- Aggregated metrics"]
+                
+                %% Metrics Service
+                MS["Metrics Service<br/><br/>- MRR calculation<br/>- Churn analysis<br/>- Growth metrics<br/>- API endpoints"]
+                
+                %% Frontend
+                FE["Frontend Dashboard<br/><br/>- React/Vue<br/>- Charts & graphs<br/>- Real-time updates"]
+                
+                %% Data Flow
+                PP1 -->|Webhooks| IS
+                PP2 -->|Webhooks| IS
+                PP3 -->|Webhooks| IS
+                PP4 -->|Webhooks| IS
+                
+                IS -->|Validated Events| MQ
+                MQ -->|Event Stream| NS
+                NS -->|Normalized Data| DW
+                DW -->|Query Data| MS
+                MS -->|Metrics API| FE
+                
+                %% Side Services
+                subgraph "Side Concerns"
+                    LOG["Logging & Monitoring<br/>(ELK Stack, Prometheus)"]
+                    AUTH["Auth Service<br/>(JWT, OAuth)"]
+                    BACKUP["Data Backup<br/>(S3, automated)"]
+                end
+                
+                %% Side connections
+                IS -.->|Logs| LOG
+                NS -.->|Logs| LOG
+                MS -.->|Logs| LOG
+                DW -.->|Backup| BACKUP
+                FE -.->|Auth| AUTH
+                MS -.->|Auth| AUTH
+                
+                %% Styling
+                classDef producer fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+                classDef consumer fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+                classDef storage fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+                classDef service fill:#fff3e0,stroke:#e65100,stroke-width:2px
+                classDef ui fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+                classDef side fill:#f5f5f5,stroke:#616161,stroke-width:1px
+                
+                class IS producer
+                class NS consumer
+                class DW,MQ storage
+                class MS service
+                class FE ui
+                class LOG,AUTH,BACKUP side
+        </div>
+    </div>
+
+    <h2>Component Descriptions</h2>
+    
+    <div class="description">
+        <h3>🔵 1. Payment Provider APIs</h3>
+        <p><strong>Providers:</strong> <span class="tech-stack">Stripe</span> <span class="tech-stack">PayPal</span> <span class="tech-stack">Square</span></p>
+        <p><strong>Integration:</strong> Webhooks for real-time events, API polling for batch data</p>
+        <p><strong>Data:</strong> Transactions, subscriptions, refunds, customer info</p>
+    </div>
+
+    <div class="description">
+        <h3>🔵 2. Ingestion Service (Producer)</h3>
+        <p><strong>Technology:</strong> <span class="tech-stack">Go</span></p>
+        <p><strong>Responsibilities:</strong></p>
+        <ul>
+            <li>Receive webhooks from payment providers</li>
+            <li>Validate webhook signatures for security</li>
+            <li>Handle retry logic if queue unavailable</li>
+            <li>Publish events to message queue</li>
+        </ul>
+    </div>
+
+    <div class="description">
+        <h3>🟢 3. Message Queue</h3>
+        <p><strong>Technology:</strong> <span class="tech-stack">Apache Kafka</span> <span class="tech-stack">RabbitMQ</span></p>
+    </div>
+
+    <div class="description">
+        <h3>🟣 4. Normalization Service (Consumer)</h3>
+        <p><strong>Technology:</strong> <span class="tech-stack">Go</span></p>
+        <p><strong>Responsibilities:</strong></p>
+        <ul>
+            <li>Consume events from queue</li>
+            <li>Transform provider-specific data to common schema</li>
+            <li>Store normalized data</li>
+        </ul>
+    </div>
+
+    <div class="description">
+        <h3>🟢 5. Data Warehouse</h3>
+        <p><strong>Technology:</strong> <span class="tech-stack">PostgreSQL</span></p>
+        <p><strong>Schema:</strong> Normalized payment events, customer data, metrics</p>
+    </div>
+
+    <div class="description">
+        <h3>🟠 6. Metrics Service</h3>
+        <p><strong>Technology:</strong> <span class="tech-stack">Rails API</span></p>
+        <p><strong>Responsibilities:</strong></p>
+        <ul>
+            <li>Calculate business metrics (MRR, churn, LTV)</li>
+            <li>Serve API endpoints for dashboard</li>
+            <li>Cache frequently requested metrics</li>
+            <li>Handle real-time metric updates</li>
+        </ul>
+    </div>
+
+    <div class="description">
+        <h3>🔴 7. Frontend Dashboard</h3>
+        <p><strong>Technology:</strong> <span class="tech-stack">React</span> <span class="tech-stack">Vue.js</span> <span class="tech-stack">Chart.js</span></p>
+        <p><strong>Features:</strong> Interactive charts, real-time updates, customizable dashboards, export capabilities</p>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+    </script>
+</body>
+</html> 
