@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERM Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 { color: #333; }
+        .diagram-container {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .description {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .entity-type {
+            display: inline-block;
+            background: #e3f2fd;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin: 2px;
+        }
+        .relationship {
+            background: #fff3e0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin: 2px;
+        }
+    </style>
+</head>
+<body>    
+    <div class="diagram-container">
+        <h2>Entity-Relationship Model</h2>
+        <div class="mermaid">
+            erDiagram
+                users ||--o{ dashboards : creates
+                users ||--o{ payment_accounts : connects
+                users ||--o{ jwt_denylist : revokes
+                
+                dashboards ||--o{ metrics : displays
+                metrics ||--o{ metric_series : contains
+                metric_series ||--o{ metric_points : has
+                
+                payment_providers ||--o{ payment_accounts : provides
+                payment_accounts ||--o{ payments : receives
+                
+                payments ||--o{ metric_calculations : feeds_into
+                metric_calculations ||--o{ metric_points : generates
+                
+                users {
+                    uuid id PK
+                    string email UK
+                    string name
+                    string company_name
+                    timestamp created_at
+                    timestamp updated_at
+                    boolean active
+                }
+                
+                jwt_denylist {
+                    string jti PK
+                    uuid user_id FK
+                    timestamp exp
+                    timestamp created_at
+                }
+                
+
+                
+                dashboards {
+                    uuid id PK
+                    uuid user_id FK
+                    string name
+                    string description
+                    json layout_config
+                    timestamp created_at
+                    timestamp updated_at
+                }
+                
+                metrics {
+                    uuid id PK
+                    uuid dashboard_id FK
+                    string name
+                    string type
+                    string description
+                    json calculation_config
+                }
+                
+                metric_series {
+                    uuid id PK
+                    uuid metric_id FK
+                    string label
+                    enum aggregation_type
+                    enum time_granularity
+                }
+                
+                metric_points {
+                    uuid id PK
+                    uuid metric_series_id FK
+                    timestamp timestamp
+                    decimal value
+                    json metadata
+                }
+                
+                payment_providers {
+                    uuid id PK
+                    string name UK
+                    string api_version
+                    json webhook_config
+                }
+                
+                payment_accounts {
+                    uuid id PK
+                    uuid user_id FK
+                    uuid provider_id FK
+                    string external_account_id UK
+                    string account_name
+                    json credentials_encrypted
+                    timestamp connected_at
+                    timestamp last_sync_at
+                    boolean active
+                }
+                
+                payments {
+                    uuid id PK
+                    uuid account_id FK
+                    string external_transaction_id UK
+                    string transaction_type
+                    decimal amount
+                    string currency
+                    string customer_id
+                    string subscription_id
+                    timestamp transaction_date
+                    json metadata
+                    timestamp created_at
+                }
+                
+                metric_calculations {
+                    uuid id PK
+                    string calculation_type
+                    timestamp period_start
+                    timestamp period_end
+                    json input_data
+                    decimal result
+                    timestamp calculated_at
+                }
+        </div>
+    </div>
+
+    <h2>Entity Descriptions</h2>
+    
+    <div class="description">
+        <h3>Core Entities</h3>
+        <p><span class="entity-type">jwt_denylist</span> - Revoked JWT tokens for secure logout</p>
+        <p><span class="entity-type">dashboards</span> - User-customizable metric dashboards</p>
+    </div>
+
+    <div class="description">
+        <h3>Metrics Entities</h3>
+        <p><span class="entity-type">metrics</span> - Business metrics like MRR, churn, LTV</p>
+        <p><span class="entity-type">metric_series</span> - Time series data for each metric</p>
+        <p><span class="entity-type">metric_points</span> - Individual data points with timestamps</p>
+        <p><span class="entity-type">metric_calculations</span> - Calculation results and metadata</p>
+    </div>
+
+    <div class="description">
+        <h3>Payment Data Entities</h3>
+        <p><span class="entity-type">payment_providers</span> - Stripe, PayPal, Square configurations</p>
+        <p><span class="entity-type">payment_accounts</span> - User's connected payment accounts</p>
+        <p><span class="entity-type">payments</span> - Processed payment transactions in unified schema</p>
+    </div>
+
+    
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            er: {
+                useMaxWidth: true
+            }
+        });
+    </script>
+</body>
+</html> 
